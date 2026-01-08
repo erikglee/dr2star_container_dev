@@ -20,6 +20,11 @@ module load afni
 ~/dR2star/dR2s /path/to/fmriprep
 ```
 
+## Output
+
+ * `tat2star.nii.gz` - 3D nifti image with `3dNotes` history.
+ * `tat2star.log.json` - pipeline provenance
+
 ## Developing
 See tests in `t/`. Run with `make check`
 
