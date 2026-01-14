@@ -14,7 +14,7 @@ Example:
 ```
 dr2star /path/to/fmriprep /path/to/output participant \
   --participant-label 01 02 \
-  --ses-label bch1 bch3echo1
+  --ses-label V01 V02 V03
 ```
 
 ## Output
