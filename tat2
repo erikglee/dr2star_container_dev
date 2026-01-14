@@ -363,9 +363,10 @@ fmriprep_to_fd_censor(){
 }
 
 update_with_censor(){
-   declare -g input filedesc_whichvol censor_file
+   declare -g input filedesc_whichvol censor_file confounds_file
    local tmpd=${1:-$TMPLOCATION} # only used if fmrirep/rewriting
    filedesc_whichvol=""
+   confounds_file=""
    readonly censor_rel
    local idxs nkeep tat2inputfile
    # update 'input' and 'runoutput'
@@ -374,6 +375,7 @@ update_with_censor(){
       censor_file=$(find_rel_file "$input" "$censor_rel")
       # SPECIAL CASE (20260102): fmriprep input is not 
       if [[ $censor_file =~ desc-confounds_timeseries.tsv$ ]]; then
+         confounds_file="$censor_file"
          new_censor="$tmpd/$(basename $censor_file _timeseries.tsv)_fd-$FD_THRES.1D"
          msg "apply fd<$FD_THRES from '$censor_file' to '$new_censor'"
          test -r "$new_censor" && echo "WARNING: overwriting an existing censor file $new_censor" >&2
@@ -553,6 +555,7 @@ _tat2(){
    all_roistats="" # all 3dROIStats volume normalization commands
    all_calc_cmd="" # 3dcalc commands
    censor_files=()
+   confounds_files=()
    local nvols_nocen=0
 
    if [ $MKMASK -eq 1 ]; then
@@ -563,6 +566,7 @@ _tat2(){
    for input in ${GLOBFILES[@]}; do
       one_ta $cnt "$input" "$TMPD"
       [ -n "$censor_rel" ] && censor_files+=("$censor_file")
+      [ -n "$confounds_file" ] && confounds_files+=("$confounds_file")
       # now have e.g. 0_keep200_tat2.nii.gz
       prev_cnt=$cnt
       let ++cnt
@@ -693,6 +697,7 @@ _tat2(){
 	 "ref_mask": "$mask",
 	 "nvox": [${all_numvox::-1}],`# -1 to remove trailing comma`
 	 "censor_files": $(json_list "${censor_out_files[@]}"),
+	 "confounds_files": $(json_list "${confounds_files[@]}"),
 	 "nt": [${all_nts::-1}],
 	 "tat2_input": $(json_list $TMPD/*_tat2.nii.gz),
 	 "raw_inputs": $(json_list ${GLOBFILES[@]}),
