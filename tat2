@@ -651,6 +651,27 @@ _tat2(){
    note_msg="$0 $allargs # $(pwd); $scale_msg, nvoxes=$all_numvox, censors=$all_censors; nt=$all_nts; vol:$volnorm_opt, time:$tnorm_opt; $MAXVOLSTOTAL/$concat_nvol/$nvols_nocen used/not-cen/total nvols; $cnt/${#GLOBFILES[@]} files; $gitver"
    3dNotes -h "$note_msg" "$OUTPUT"
 
+   local censor_out_files=()
+   if [ -n "$censor_rel" ]; then
+      local out_base
+      out_base="$(basename "$OUTPUT")"
+      out_base="${out_base%.nii.gz}"
+      out_base="${out_base%.nii}"
+      out_base="${out_base%_T2starw}"
+      for i in "${!censor_files[@]}"; do
+         local run_idx
+         run_idx=$(printf "%02d" $((i + 1)))
+         local censor_name
+         if [ $nfiles -gt 1 ]; then
+            censor_name="${out_base}_run-${run_idx}_censor.1D"
+         else
+            censor_name="${out_base}_censor.1D"
+         fi
+         cp "${censor_files[$i]}" "$outdir/$censor_name"
+         censor_out_files+=("$outdir/$censor_name")
+      done
+   fi
+
    # computer-friendly output for parsing when running many option permutations
    if [ "${WRITE_JSON_LOG:-1}" -eq 1 ]; then
      json_out="$OUTPUT"
@@ -668,7 +689,7 @@ _tat2(){
 	 "time_norm_3dcalc": "${tnorm_opt//-/}",
 	 "ref_mask": "$mask",
 	 "nvox": [${all_numvox::-1}],`# -1 to remove trailing comma`
-	 "censor_files": [${all_censors::-1}],
+	 "censor_files": $(json_list "${censor_out_files[@]}"),
 	 "nt": [${all_nts::-1}],
 	 "tat2_input": $(json_list $TMPD/*_tat2.nii.gz),
 	 "raw_inputs": $(json_list ${GLOBFILES[@]}),
@@ -677,6 +698,10 @@ _tat2(){
 	 "concat_nvol": $concat_nvol,
 	 "nvolx_nocen": $nvols_nocen,
 	 "scale": "$SCALE",
+	 "fd_thres": "$FD_THRES",
+	 "maxvols_per_run": $MAXVOLS,
+	 "sample_method": "$IDX_SAMPLE_METHOD",
+	 "censor_rel": "$censor_rel",
 	 "git": "$gitver",
 	 "tat2_ver": "$TAT2_VER",
 	 "use_inverse": "$t2_inv",
@@ -684,25 +709,6 @@ _tat2(){
 	 "maxvols": $MAXVOLSTOTAL
 	}
 	HEREDOC
-   fi
-
-   if [ -n "$censor_rel" ]; then
-      local out_base
-      out_base="$(basename "$OUTPUT")"
-      out_base="${out_base%.nii.gz}"
-      out_base="${out_base%.nii}"
-      out_base="${out_base%_T2starw}"
-      for i in "${!censor_files[@]}"; do
-         local run_idx
-         run_idx=$(printf "%02d" $((i + 1)))
-         local censor_name
-         if [ $nfiles -gt 1 ]; then
-            censor_name="${out_base}_run-${run_idx}_censor.1D"
-         else
-            censor_name="${out_base}_censor.1D"
-         fi
-         cp "${censor_files[$i]}" "$outdir/$censor_name"
-      done
    fi
 
    [ $CLEAN -eq 1 ] && \
