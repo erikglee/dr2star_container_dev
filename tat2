@@ -541,7 +541,10 @@ _tat2(){
       msg "# have $OUTPUT. rm '$OUTPUT' # to redo" &&
       return 0
 
-   TMPD=$(mktemp -d $TMPLOCATION/tat2star_XXXX)
+   local outdir
+   outdir="$(dirname "$OUTPUT")"
+   mkdir -p "$outdir"
+   TMPD=$(mktemp -d "$outdir/tat2star_XXXX")
    cnt=0
    volcount=0
    all_numvox=""  # will be populated with each subjectmask (csv)
@@ -649,8 +652,12 @@ _tat2(){
    3dNotes -h "$note_msg" "$OUTPUT"
 
    # computer-friendly output for parsing when running many option permutations
-   [ "${WRITE_JSON_LOG:-1}" -eq 1 ] &&
-     cat <<- HEREDOC > "${OUTPUT/.nii.gz/.log.json}"
+   if [ "${WRITE_JSON_LOG:-1}" -eq 1 ]; then
+     json_out="$OUTPUT"
+     [[ "$json_out" == *.nii.gz ]] && json_out="${json_out%.nii.gz}"
+     [[ "$json_out" == *.nii ]] && json_out="${json_out%.nii}"
+     json_out="${json_out}.json"
+     cat <<- HEREDOC > "$json_out"
 	{
     "cmd": "$0 $(sed 's:\\:\\\\:g' <<< "$allargs")",
 	 "roistats_cmds": "${all_roistats}",
@@ -677,6 +684,25 @@ _tat2(){
 	 "maxvols": $MAXVOLSTOTAL
 	}
 	HEREDOC
+   fi
+
+   if [ -n "$censor_rel" ]; then
+      local out_base
+      out_base="$(basename "$OUTPUT")"
+      out_base="${out_base%.nii.gz}"
+      out_base="${out_base%.nii}"
+      for i in "${!censor_files[@]}"; do
+         local run_idx
+         run_idx=$(printf "%02d" $((i + 1)))
+         local censor_name
+         if [ $nfiles -gt 1 ]; then
+            censor_name="${out_base}_run-${run_idx}_censor.1D"
+         else
+            censor_name="${out_base}_censor.1D"
+         fi
+         cp "${censor_files[$i]}" "$outdir/$censor_name"
+      done
+   fi
 
    [ $CLEAN -eq 1 ] && \
       rm -r "$TMPD" ||\
@@ -760,11 +786,9 @@ _tat2_fmriprep(){
       [ -z "$ses_label" ] && ses_label="unknown" &&
          echo "WARNING: no ses-* in '${GLOBFILES[0]}', using ses-unknown" >&2
       local output_name
-      local base_name
-      base_name="$(basename "${GLOBFILES[0]}")"
-      output_name="${base_name/_desc-preproc_bold/_desc-preproc_tat2star}"
-      [ "$output_name" = "$base_name" ] &&
-         output_name="${base_name%.nii*}_tat2star.nii.gz"
+      output_name="sub-$sub_label"
+      [ -n "$ses_label" ] && output_name="${output_name}_ses-$ses_label"
+      output_name="${output_name}_space-MNI152NLin6Asym_res-2_desc-tat2star_T2starw.nii.gz"
       local output_dir="$FMRIPREP_OUTPUT_ROOT/sub-$sub_label/ses-$ses_label/anat"
       mkdir -p "$output_dir"
       output_path="$output_dir/$output_name"
