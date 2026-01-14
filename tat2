@@ -33,6 +33,9 @@ WRITE_JSON_LOG=1
 # run through fmriprep. -fmriprep option added 20260102
 FMRIPREP_DERIV_ROOT=""
 FMRIPREP_TASK_PATTERN=${FMRIPREP_TASK_PATTERN:-"*_task-*desc-preproc_bold.nii.gz"}
+FMRIPREP_PARTICIPANT_LABELS=()
+FMRIPREP_SES_LABELS=()
+FMRIPREP_OUTPUT_ROOT=""
 
 # all the inputs (possibly globs) we want to work on
 declare -a GLOBFILES
@@ -88,6 +91,18 @@ OPTIONS (in order of relevance)
     To change new defaults, specify modifications after -fmriprep option
     NB. without -fmriprep, tat2 creates a single file from all inputs
         with -fmriprep, tat2start.nii.gz file PER func/ directory
+
+  --participant-label LABEL [LABEL ...]
+    only process matching participant folders. Accepts LABEL or sub-LABEL.
+    Can be specified multiple times.
+
+  --ses-label LABEL [LABEL ...]
+    only process matching session folders. Accepts LABEL or ses-LABEL.
+    Can be specified multiple times.
+
+  --fmriprep-output DIR
+    write outputs under DIR using BIDS-like layout:
+    DIR/sub-<label>/ses-<label>/anat/<output_name>
 
    GNU Parallel will be used when avalaible to parallelize.
    Parameters set with environment variable
@@ -260,6 +275,21 @@ parse_args(){
            echo "WARNING: -censor_rel '$censor_rel' defined before -fmriprep, overwriting" >&2 
         censor_rel='s/(task-[^_]+(_run-[^_]+)?)_.*/\1_desc-confounds_timeseries.tsv/'
         ;;
+     --participant-label)
+        FMRIPREP_PARTICIPANT_LABEL="${2:?expect participant label}"; shift 2
+        [[ "$FMRIPREP_PARTICIPANT_LABEL" != sub-* ]] &&
+           FMRIPREP_PARTICIPANT_LABEL="sub-$FMRIPREP_PARTICIPANT_LABEL"
+        FMRIPREP_PARTICIPANT_LABELS+=("$FMRIPREP_PARTICIPANT_LABEL")
+        ;;
+     --ses-label)
+        FMRIPREP_SES_LABEL="${2:?expect session label}"; shift 2
+        [[ "$FMRIPREP_SES_LABEL" != ses-* ]] &&
+           FMRIPREP_SES_LABEL="ses-$FMRIPREP_SES_LABEL"
+        FMRIPREP_SES_LABELS+=("$FMRIPREP_SES_LABEL")
+        ;;
+     --fmriprep-output)
+        FMRIPREP_OUTPUT_ROOT="${2:?expect output root directory}"; shift 2
+        ;;
      -verbose)    set -x; shift;;
      -h*)         usage;;
      -*)          echo "unknown option '$1'"; usage;;
@@ -290,6 +320,8 @@ args_are_sane(){
 
    # only check globs/inputs if not running as fmriprep
    if [ -z "$FMRIPREP_DERIV_ROOT" ]; then
+      [ ${#FMRIPREP_PARTICIPANT_LABELS[@]} -gt 0 -o ${#FMRIPREP_SES_LABELS[@]} -gt 0 -o -n "$FMRIPREP_OUTPUT_ROOT" ] &&
+         err "--participant-label/--ses-label/--fmriprep-output requires -fmriprep"
       echo "#files/globs: ${#GLOBFILES[@]}"
       # need to have at least one file to average
       [ -z "${GLOBFILES[*]}" ] && usage
@@ -642,6 +674,30 @@ _fmriprep_loop(){
    # run all of fmripre func/ files
    # 'deriv/sub-x/ses-y/func' or 'deriv/sub-x/func/'
    mapfile -t bold_dirs < <(find "$FMRIPREP_DERIV_ROOT" -name 'func' -type d)
+   if [ ${#FMRIPREP_PARTICIPANT_LABELS[@]} -gt 0 -o ${#FMRIPREP_SES_LABELS[@]} -gt 0 ]; then
+      local filtered_dirs=()
+      local session_func
+      for session_func in "${bold_dirs[@]}"; do
+         if [ ${#FMRIPREP_PARTICIPANT_LABELS[@]} -gt 0 ]; then
+            local sub_match=0
+            local label
+            for label in "${FMRIPREP_PARTICIPANT_LABELS[@]}"; do
+               [[ "$session_func" == *"/$label/"* ]] && sub_match=1 && break
+            done
+            [ $sub_match -eq 0 ] && continue
+         fi
+         if [ ${#FMRIPREP_SES_LABELS[@]} -gt 0 ]; then
+            local ses_match=0
+            local label
+            for label in "${FMRIPREP_SES_LABELS[@]}"; do
+               [[ "$session_func" == *"/$label/"* ]] && ses_match=1 && break
+            done
+            [ $ses_match -eq 0 ] && continue
+         fi
+         filtered_dirs+=("$session_func")
+      done
+      bold_dirs=("${filtered_dirs[@]}")
+   fi
    msg "found ${#bold_dirs[@]} 'func' folders (fmriprep sessions)"
    [ ${#bold_dirs[@]} -eq 0 ] && 
       err "No $FMRIPREP_DERIV_ROOT/**/func folders to work with!"
@@ -656,7 +712,7 @@ _fmriprep_loop(){
    done
 
    if command -v env_parallel >/dev/null && [ -n "$PARALEL_OPTS" ]; then
-      export FMRIPREP_TASK_PATTERN FMRIPREP_DERIV_ROOT
+      export FMRIPREP_TASK_PATTERN FMRIPREP_DERIV_ROOT FMRIPREP_OUTPUT_ROOT
       export -f _tat2_fmriprep
       parallel $PARALEL_OPTS -N1 _tat2_fmriprep {1} -censor_rel "'$censor_rel'" -mask_rel "'$MASK_REL'" "${noprepargs[@]}" ::: "${bold_dirs[@]}"
    else
@@ -676,12 +732,34 @@ _tat2_fmriprep(){
       echo "WARNING: no non-echo task files in $session_func" >&2 &&
       return 1
 
-   ! [[ ${GLOBFILES[0]} =~ sub-[^_/]+(_ses-[^_/]+)?_ ]] && 
+   ! [[ ${GLOBFILES[0]} =~ sub-[^_/]+(_ses-[^_/]+)?_ ]] &&
       echo "ERROR: no 'sub-*' in first input of $session_func: '${GLOBFILES[0]}'" &&
       return 2
 
-   # TODO: option to save outside of fmrirep func dir
-   tat2 -output "$session_func/${BASH_REMATCH}desc-preproc_tat2star.nii.gz" "$@" ${GLOBFILES[@]}
+   local output_path
+   if [ -n "$FMRIPREP_OUTPUT_ROOT" ]; then
+      local sub_label=""
+      local ses_label=""
+      if [[ ${GLOBFILES[0]} =~ sub-([^_/]+)(_ses-([^_/]+))?_ ]]; then
+         sub_label="${BASH_REMATCH[1]}"
+         ses_label="${BASH_REMATCH[3]}"
+      fi
+      [ -z "$ses_label" ] && ses_label="unknown" &&
+         echo "WARNING: no ses-* in '${GLOBFILES[0]}', using ses-unknown" >&2
+      local output_name
+      local base_name
+      base_name="$(basename "${GLOBFILES[0]}")"
+      output_name="${base_name/_desc-preproc_bold/_desc-preproc_tat2star}"
+      [ "$output_name" = "$base_name" ] &&
+         output_name="${base_name%.nii*}_tat2star.nii.gz"
+      local output_dir="$FMRIPREP_OUTPUT_ROOT/sub-$sub_label/ses-$ses_label/anat"
+      mkdir -p "$output_dir"
+      output_path="$output_dir/$output_name"
+   else
+      output_path="$session_func/${BASH_REMATCH}desc-preproc_tat2star.nii.gz"
+   fi
+
+   tat2 -output "$output_path" "$@" ${GLOBFILES[@]}
 }
 
 # run if not sourced
