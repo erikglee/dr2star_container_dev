@@ -329,7 +329,8 @@ args_are_sane(){
       # how many files do we have
       nfiles=$(find -L ${GLOBFILES[@]} -maxdepth 0 | wc -l)
       [ $nfiles -eq 0 ] && err "no files match input GLOBFILESs: ${GLOBFILES[@]}"
-      [ $nfiles -eq 1 ] && echo "WARNING: only one file matches '${GLOBFILES[@]}'. expected all (>1) runs"
+      [ $nfiles -eq 1 -a -z "${TAT2_SUPPRESS_SINGLE_WARNING:-}" ] && \
+         echo "WARNING: only one file matches '${GLOBFILES[@]}'. expected all (>1) runs"
       [ $nfiles -gt 10 ] && echo "WARNING: running on $nfiles epi files! Are you sure you don't want to run one visit at a time?"
 
       [ -r "$OUTPUT" ] && echo "# have $OUTPUT; rm $OUTPUT # to redo" && exit 0
@@ -547,6 +548,7 @@ _tat2(){
    all_censors="" # appened list of all censor files used (csv)
    all_roistats="" # all 3dROIStats volume normalization commands
    all_calc_cmd="" # 3dcalc commands
+   censor_files=()
    local nvols_nocen=0
 
    if [ $MKMASK -eq 1 ]; then
@@ -556,6 +558,7 @@ _tat2(){
 
    for input in ${GLOBFILES[@]}; do
       one_ta $cnt "$input" "$TMPD"
+      [ -n "$censor_rel" ] && censor_files+=("$censor_file")
       # now have e.g. 0_keep200_tat2.nii.gz
       prev_cnt=$cnt
       let ++cnt
@@ -576,6 +579,14 @@ _tat2(){
    actual_nfiles=$(ls $TMPD/*_tat2.nii.gz|wc -l)
 
    [ $actual_nfiles -ne $nfiles ] && err "ERROR: create $actual_nfiles/$nfiles ($cnt iterations) in $TMPD"
+   if [ -n "$censor_rel" ]; then
+      if [ ${#censor_files[@]} -ne $nfiles ]; then
+         err "ERROR: have ${#censor_files[@]} censor files for $nfiles runs"
+      fi
+      uniq_censors=$(printf "%s\n" "${censor_files[@]}" | sort -u | wc -l)
+      [ $uniq_censors -ne $nfiles ] &&
+         err "ERROR: $uniq_censors unique censor files for $nfiles runs"
+   fi
 
    msg "tat2star $OUTPUT"
    # combine all the normalized runs if we need to
@@ -761,7 +772,7 @@ _tat2_fmriprep(){
       output_path="$session_func/${BASH_REMATCH}desc-preproc_tat2star.nii.gz"
    fi
 
-   tat2 -output "$output_path" "$@" ${GLOBFILES[@]}
+   TAT2_SUPPRESS_SINGLE_WARNING=1 tat2 -output "$output_path" "$@" ${GLOBFILES[@]}
 }
 
 # run if not sourced
