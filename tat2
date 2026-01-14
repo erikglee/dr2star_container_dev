@@ -706,23 +706,20 @@ _fmriprep_loop(){
    noprepargs=(); i=0
    while [ $i -lt ${#ALLARGS_[@]} ]; do
       arg=${ALLARGS_[$i]}
-      [[ $arg == -fmriprep ]] && let i=i+2 && continue
+      if [[ $arg == -fmriprep || $arg == --fmriprep-output || \
+            $arg == --participant-label || $arg == --ses-label ]]; then
+         let i=i+2 && continue
+      fi
       noprepargs+=("$arg")
       let ++i
    done
 
-   if command -v env_parallel >/dev/null && [ -n "$PARALEL_OPTS" ]; then
-      export FMRIPREP_TASK_PATTERN FMRIPREP_DERIV_ROOT FMRIPREP_OUTPUT_ROOT
-      export -f _tat2_fmriprep
-      parallel $PARALEL_OPTS -N1 _tat2_fmriprep {1} -censor_rel "'$censor_rel'" -mask_rel "'$MASK_REL'" "${noprepargs[@]}" ::: "${bold_dirs[@]}"
-   else
-      echo "WARNING: not parallelizing. install GNU Parallel to use mutliple cores." >&2
-      for session_func in "${bold_dirs[@]}"; do
-         msg "starting $session_func"
-         # continue across failures -- don't want one bad session to bring it all down
-         _tat2_fmriprep "$session_func" "${noprepargs[@]}" || :
-      done
-   fi
+   echo "WARNING: parallelization disabled; running serially." >&2
+   for session_func in "${bold_dirs[@]}"; do
+      msg "starting $session_func"
+      # continue across failures -- don't want one bad session to bring it all down
+      _tat2_fmriprep "$session_func" "${noprepargs[@]}" || :
+   done
 }
 _tat2_fmriprep(){
    # expect to be called by _fmriprep_loop after parse_args sets all bug GLOBFILES
