@@ -715,10 +715,11 @@ _fmriprep_loop(){
    done
 
    echo "WARNING: parallelization disabled; running serially." >&2
+   local fmriprep_args=("-censor_rel" "$censor_rel" "-mask_rel" "$MASK_REL")
    for session_func in "${bold_dirs[@]}"; do
       msg "starting $session_func"
       # continue across failures -- don't want one bad session to bring it all down
-      _tat2_fmriprep "$session_func" "${noprepargs[@]}" || :
+      _tat2_fmriprep "$session_func" "${fmriprep_args[@]}" "${noprepargs[@]}" || :
    done
 }
 _tat2_fmriprep(){
