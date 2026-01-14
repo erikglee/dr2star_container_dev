@@ -16,9 +16,13 @@ copy --from=docker.io/afni/afni_make_build@sha256:5e0d8733ed277ea58b4a527e88bc10
 
 # depends read from 'ldd': libz libexpat
 run apt-get update -qq && \
-  apt-get install -qy parallel libexpat1 zlib1g && \
+  apt-get install -qy parallel libexpat1 zlib1g python3 && \
   rm -rf /var/lib/apt/lists/* 
 
 
 copy tat2 /usr/bin/
-entrypoint ["/usr/bin/tat2"]
+copy run.py /usr/bin/dr2star
+copy my_parser.py /usr/bin/
+run chmod +x /usr/bin/tat2 /usr/bin/dr2star
+entrypoint ["/usr/bin/dr2star"]
+
