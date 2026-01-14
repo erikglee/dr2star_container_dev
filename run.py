@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -42,8 +43,14 @@ def main(argv: list[str] | None = None) -> int:
     for label in ses_labels:
         cmd.extend(["--ses-label", label])
 
+    env = os.environ.copy()
+    env.setdefault(
+        "FMRIPREP_TASK_PATTERN",
+        "*_task-*space-MNI152NLin6Asym_res-2*desc-preproc_bold.nii.gz",
+    )
+
     try:
-        result = subprocess.run(cmd, check=False)
+        result = subprocess.run(cmd, check=False, env=env)
     except FileNotFoundError:
         parser.error("'tat2' not found on PATH. Ensure the script is installed or in PATH.")
 
@@ -54,3 +61,4 @@ def main(argv: list[str] | None = None) -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
+
