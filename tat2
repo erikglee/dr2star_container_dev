@@ -545,6 +545,7 @@ _tat2(){
    outdir="$(dirname "$OUTPUT")"
    mkdir -p "$outdir"
    TMPD=$(mktemp -d "$outdir/tat2star_XXXX")
+   msg "working dir: $TMPD"
    cnt=0
    volcount=0
    all_numvox=""  # will be populated with each subjectmask (csv)
@@ -629,6 +630,7 @@ _tat2(){
    # time norm
    local Tstat_cmd="3dTstat -prefix $OUTPUT -overwrite $tnorm_opt $concated_file$maxvolsubset"
    eval "$Tstat_cmd"
+   msg "final output written: $OUTPUT"
 
    ### HISTORY/PROVENANCE
    # 1D create file provenance is not tracked and tmp files will be remove.
@@ -670,6 +672,7 @@ _tat2(){
          cp "${censor_files[$i]}" "$outdir/$censor_name"
          censor_out_files+=("$outdir/$censor_name")
       done
+      msg "censor files written: ${#censor_out_files[@]}"
    fi
 
    # computer-friendly output for parsing when running many option permutations
@@ -709,6 +712,7 @@ _tat2(){
 	 "maxvols": $MAXVOLSTOTAL
 	}
 	HEREDOC
+     msg "json sidecar written: $json_out"
    fi
 
    [ $CLEAN -eq 1 ] && \
@@ -722,6 +726,8 @@ _fmriprep_loop(){
    # run all of fmripre func/ files
    # 'deriv/sub-x/ses-y/func' or 'deriv/sub-x/func/'
    mapfile -t bold_dirs < <(find "$FMRIPREP_DERIV_ROOT" -name 'func' -type d)
+   msg "fmriprep task pattern: $FMRIPREP_TASK_PATTERN"
+   [ -n "$FMRIPREP_OUTPUT_ROOT" ] && msg "fmriprep output root: $FMRIPREP_OUTPUT_ROOT"
    if [ ${#FMRIPREP_PARTICIPANT_LABELS[@]} -gt 0 -o ${#FMRIPREP_SES_LABELS[@]} -gt 0 ]; then
       local filtered_dirs=()
       local session_func
@@ -765,9 +771,11 @@ _fmriprep_loop(){
    echo "WARNING: parallelization disabled; running serially." >&2
    local fmriprep_args=("-censor_rel" "$censor_rel" "-mask_rel" "$MASK_REL")
    for session_func in "${bold_dirs[@]}"; do
+      echo
       msg "starting $session_func"
       # continue across failures -- don't want one bad session to bring it all down
       _tat2_fmriprep "$session_func" "${fmriprep_args[@]}" "${noprepargs[@]}" || :
+      echo
    done
 }
 _tat2_fmriprep(){
@@ -777,6 +785,7 @@ _tat2_fmriprep(){
    [ ${#GLOBFILES[@]} -eq 0 ] &&
       echo "WARNING: no non-echo task files in $session_func" >&2 &&
       return 1
+   msg "fmriprep runs: ${#GLOBFILES[@]} in $session_func"
 
    ! [[ ${GLOBFILES[0]} =~ sub-[^_/]+(_ses-[^_/]+)?_ ]] &&
       echo "ERROR: no 'sub-*' in first input of $session_func: '${GLOBFILES[0]}'" &&
@@ -802,6 +811,7 @@ _tat2_fmriprep(){
    else
       output_path="$session_func/${BASH_REMATCH}desc-preproc_tat2star.nii.gz"
    fi
+   msg "output: $output_path"
 
    TAT2_SUPPRESS_SINGLE_WARNING=1 tat2 -output "$output_path" "$@" ${GLOBFILES[@]}
 }
