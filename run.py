@@ -43,11 +43,42 @@ def main(argv: list[str] | None = None) -> int:
     for label in ses_labels:
         cmd.extend(["--ses-label", label])
 
+    if args.scale is not None:
+        cmd.extend(["-scale", str(args.scale)])
+    if args.no_voxscale:
+        cmd.append("-no_voxscale")
+    if args.inverse:
+        cmd.append("-inverse")
+    if args.mean_time:
+        cmd.append("-mean_time")
+    if args.median_time:
+        cmd.append("-median_time")
+    if args.mean_vol:
+        cmd.append("-mean_vol")
+    if args.median_vol:
+        cmd.append("-median_vol")
+    if args.no_vol:
+        cmd.append("-no_vol")
+    if args.maxvols is not None:
+        cmd.extend(["-maxvols", str(args.maxvols)])
+    if args.maxvolstotal is not None:
+        cmd.extend(["-maxvolstotal", str(args.maxvolstotal)])
+    if args.sample_method:
+        cmd.extend(["-sample_method", args.sample_method])
+    if args.tmp_dir:
+        cmd.extend(["-tmp", args.tmp_dir])
+    if args.noclean:
+        cmd.append("-noclean")
+    if args.verbose:
+        cmd.append("-verbose")
+
     env = os.environ.copy()
     env.setdefault(
         "FMRIPREP_TASK_PATTERN",
         "*_task-*space-MNI152NLin6Asym_res-2*desc-preproc_bold.nii.gz",
     )
+    if args.fd_thres is not None:
+        env["FD_THRES"] = str(args.fd_thres)
 
     try:
         result = subprocess.run(cmd, check=False, env=env)
