@@ -6,18 +6,27 @@ pipeline for running on fMRIPrep derivatives. The wrapper scans each
 writes one output per subject/session.
 
 High-level flow:
-  - point to an fMRIPrep derivatives folder
-  - choose an output folder
-  - optionally limit participants/sessions
+ - point to an fMRIPrep derivatives folder
+ - choose an output folder
+ - optionally limit participants/sessions
+
+Example:
+```
+dr2star /path/to/fmriprep /path/to/output participant \
+  --participant-label 01 02 \
+  --ses-label bch1 bch3echo1
+```
 
 ## Output
 Outputs are written under:
-  OUTPUT_DIR/sub-<label>/ses-<label>/anat/
+```
+OUTPUT_DIR/sub-<label>/ses-<label>/anat/
+```
 
 Each session produces:
-  - `sub-*_ses-*_space-MNI152NLin6Asym_res-2_desc-tat2star_T2starw.nii.gz`
-  - a JSON sidecar with the same basename
-  - one or more censor files with matching basename
+ - `sub-*_ses-*_space-MNI152NLin6Asym_res-2_desc-tat2star_T2starw.nii.gz`
+ - a JSON sidecar with the same basename
+ - one or more censor files with matching basename
 
 ## Container Details For Whoever is Maintaining This Repo
 There are two github actions mechanisms that will result in a new
@@ -46,24 +55,32 @@ The container image is published to GitHub Container Registry (GHCR).
 Replace `<owner>/<repo>` with this repository path.
 
 Docker pull:
-  docker pull ghcr.io/<owner>/<repo>:latest
+```
+docker pull ghcr.io/<owner>/<repo>:latest
+```
 
 Docker run:
-  docker run --rm \
-    -v /path/to/fmriprep:/input_dir \
-    -v /path/to/output:/output_dir \
-    ghcr.io/<owner>/<repo>:latest \
-    /input_dir /output_dir participant
+```
+docker run --rm \
+  -v /path/to/fmriprep:/input_dir \
+  -v /path/to/output:/output_dir \
+  ghcr.io/<owner>/<repo>:latest \
+  /input_dir /output_dir participant
+```
 
 Singularity/Apptainer pull:
-  apptainer pull dr2star.sif docker://ghcr.io/<owner>/<repo>:latest
+```
+apptainer pull dr2star.sif docker://ghcr.io/<owner>/<repo>:latest
+```
 
 Singularity/Apptainer run:
-  apptainer run --cleanenv \
-    -B /path/to/fmriprep:/input_dir \
-    -B /path/to/output:/output_dir \
-    dr2star.sif \
-    /input_dir /output_dir participant
+```
+apptainer run --cleanenv \
+  -B /path/to/fmriprep:/input_dir \
+  -B /path/to/output:/output_dir \
+  dr2star.sif \
+  /input_dir /output_dir participant
+```
 
 
 ## Developing
