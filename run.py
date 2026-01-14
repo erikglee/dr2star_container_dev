@@ -43,9 +43,12 @@ def main(argv: list[str] | None = None) -> int:
         cmd.extend(["--ses-label", label])
 
     try:
-        subprocess.run(cmd, check=True)
+        result = subprocess.run(cmd, check=False)
     except FileNotFoundError:
         parser.error("'tat2' not found on PATH. Ensure the script is installed or in PATH.")
+
+    if result.returncode != 0:
+        return result.returncode
     return 0
 
 
