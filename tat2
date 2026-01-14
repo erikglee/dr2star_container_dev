@@ -273,7 +273,7 @@ parse_args(){
         MASK_REL='s/_desc-preproc_bold/_desc-brain_mask/'
         [ -n "$censor_rel" ] &&
            echo "WARNING: -censor_rel '$censor_rel' defined before -fmriprep, overwriting" >&2 
-        censor_rel='s/(_task-[^_]+(_run-[^_]+)?(_part-[^_]+)?)_.*/\1_desc-confounds_timeseries.tsv/'
+        censor_rel='s/(_task-[^_]+(_acq-[^_]+)?(_dir-[^_]+)?(_run-[^_]+)?(_echo-[^_]+)?(_part-[^_]+)?)_.*/\1_desc-confounds_timeseries.tsv/'
         ;;
      --participant-label)
         FMRIPREP_PARTICIPANT_LABEL="${2:?expect participant label}"; shift 2
