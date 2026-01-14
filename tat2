@@ -691,6 +691,7 @@ _tat2(){
       out_base="$(basename "$OUTPUT")"
       out_base="${out_base%.nii.gz}"
       out_base="${out_base%.nii}"
+      out_base="${out_base%_T2starw}"
       for i in "${!censor_files[@]}"; do
          local run_idx
          run_idx=$(printf "%02d" $((i + 1)))
