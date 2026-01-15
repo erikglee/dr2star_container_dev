@@ -1,4 +1,4 @@
-FROM debian:13-slim
+FROM python:3.11-slim-bookworm
 
 # ~10Mb of AFNI tools.  latest pulled 20260102, created 2025-12-18
 COPY --from=docker.io/afni/afni_make_build@sha256:5e0d8733ed277ea58b4a527e88bc10f62572ee63308d97a5e5e340d4423b3804 \
@@ -18,15 +18,12 @@ RUN apt-get update -qq && \
   apt-get install -qy --no-install-recommends \
     parallel \
     libexpat1 \
-    zlib1g \
-    python3 \
-    python3-pip \
-    ca-certificates && \
+    zlib1g && \
   rm -rf /var/lib/apt/lists/* 
 
-RUN python3 -m pip install --no-cache-dir --upgrade pip setuptools wheel --break-system-packages
+RUN python3 -m pip install --no-cache-dir --upgrade pip setuptools wheel
 
-RUN python3 -m pip install --no-cache-dir --break-system-packages \
+RUN python3 -m pip install --no-cache-dir \
   numpy==1.26.4 \
   pandas==2.2.3 \
   nibabel==5.3.2
