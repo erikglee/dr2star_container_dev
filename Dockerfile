@@ -22,13 +22,14 @@ RUN apt-get update -qq && \
     python3 \
     python3-pip \
     ca-certificates && \
-  python3 -m pip install --no-cache-dir --upgrade pip setuptools wheel --break-system-packages && \
-  python3 -m pip install --no-cache-dir --break-system-packages \
-    numpy==1.26.4 \
-    pandas==2.2.3 \
-    nibabel==5.3.2 \
-    pybids==0.16.5 && \
   rm -rf /var/lib/apt/lists/* 
+
+RUN python3 -m pip install --no-cache-dir --upgrade pip setuptools wheel --break-system-packages
+
+RUN python3 -m pip install --no-cache-dir --break-system-packages \
+  numpy==1.26.4 \
+  pandas==2.2.3 \
+  nibabel==5.3.2
 
 
 COPY dr2star-core /usr/bin/
