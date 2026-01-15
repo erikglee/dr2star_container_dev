@@ -20,11 +20,10 @@ RUN apt-get update -qq && \
     libexpat1 \
     zlib1g \
     python3 \
-    python3-venv \
+    python3-pip \
     ca-certificates && \
-  python3 -m venv /opt/venv && \
-  /opt/venv/bin/pip install --no-cache-dir --upgrade pip setuptools wheel && \
-  /opt/venv/bin/pip install --no-cache-dir \
+  python3 -m pip install --no-cache-dir --upgrade pip setuptools wheel --break-system-packages && \
+  python3 -m pip install --no-cache-dir --break-system-packages \
     numpy==1.26.4 \
     pandas==2.2.3 \
     nibabel==5.3.2 \
@@ -34,8 +33,6 @@ RUN apt-get update -qq && \
 
 COPY dr2star-core /usr/bin/
 COPY dr2star /opt/dr2star/dr2star
-ENV VIRTUAL_ENV=/opt/venv
-ENV PATH="/opt/venv/bin:${PATH}"
 ENV PYTHONPATH=/opt/dr2star
 RUN chmod +x /usr/bin/dr2star-core
 ENTRYPOINT ["python3", "-m", "dr2star.run"]
