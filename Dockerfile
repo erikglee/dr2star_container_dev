@@ -1,4 +1,3 @@
-# see 'make .make/docker-dr2star' and 'DR2STAR_TEST_DOCKER=1 bats t/dr2star-fmriprep.bats'
 FROM debian:13-slim
 
 # ~10Mb of AFNI tools.  latest pulled 20260102, created 2025-12-18
