@@ -61,61 +61,16 @@ def build_cmd_template(
     return cmd
 
 
-def _normalize_labels(labels: list[str], prefix: str) -> list[str]:
-    return [label.removeprefix(prefix) for label in labels]
-
-
-def _discover_subjects(input_dir: Path, requested: list[str]) -> list[str]:
-    if requested:
-        return requested
-    subjects = sorted(
-        path.name.removeprefix("sub-")
-        for path in input_dir.glob("sub-*")
-        if path.is_dir()
-    )
-    if not subjects:
-        raise FileNotFoundError(f"No subject directories found under {input_dir}")
-    return subjects
-
-
-def _discover_sessions(subject_dir: Path, requested: list[str]) -> list[str | None]:
-    sessions = sorted(
-        path.name.removeprefix("ses-")
-        for path in subject_dir.glob("ses-*")
-        if path.is_dir()
-    )
-    if sessions:
-        if requested:
-            sessions = [session for session in sessions if session in requested]
-            if not sessions:
-                raise FileNotFoundError(
-                    f"No requested sessions found under {subject_dir}"
-                )
-        return sessions
-    if requested:
-        raise FileNotFoundError(
-            f"Session labels provided but no ses-* directories found under {subject_dir}"
-        )
-    return [None]
-
-
-def _replace_confounds_suffix(filename: str, suffix: str) -> str:
-    if filename.endswith("_desc-confounds_timeseries.tsv"):
-        return filename.replace("_desc-confounds_timeseries.tsv", suffix)
-    if filename.endswith("_desc-confounds_regressors.tsv"):
-        return filename.replace("_desc-confounds_regressors.tsv", suffix)
-    raise NameError(f"Unexpected confound file name format: {filename}")
-
-
 def main(argv: list[str] | None = None) -> int:
     parser = get_parser()
     args = parser.parse_args(argv)
 
     input_dir = Path(args.input_dir)
     output_dir = Path(args.output_dir)
+    utilities.ensure_dataset_description(output_dir)
 
-    participant_labels = _normalize_labels(args.participant_label or [], "sub-")
-    ses_labels = _normalize_labels(args.ses_label or [], "ses-")
+    participant_labels = utilities._normalize_labels(args.participant_label or [], "sub-")
+    ses_labels = utilities._normalize_labels(args.ses_label or [], "ses-")
 
     if participant_labels:
         print(f"Participants: {', '.join(participant_labels)}")
@@ -134,13 +89,17 @@ def main(argv: list[str] | None = None) -> int:
     if args.fd_thres is not None:
         env["FD_THRES"] = str(args.fd_thres)
 
-    subjects = _discover_subjects(input_dir, participant_labels)
+    subjects = utilities._discover_subjects(input_dir, participant_labels)
+    print(f"Found a total of {len(subjects)} subjects that will be considered for processing.")
     #Iterate through all possible subjects
-    for temp_subject in subjects:
+    for subject_idx, temp_subject in enumerate(subjects, start=1):
+        print(f"Subject [{subject_idx}/{len(subjects)}]: sub-{temp_subject}")
         subject_dir = input_dir / f"sub-{temp_subject}"
-        sessions = _discover_sessions(subject_dir, ses_labels)
+        sessions = utilities._discover_sessions(subject_dir, ses_labels)
         #Iterate through all possible sessions
         for temp_session in sessions:
+            session_label = f"ses-{temp_session}" if temp_session else "ses-<none>"
+            print(f"Session: {session_label}")
             if temp_session:
                 func_directory = subject_dir / f"ses-{temp_session}" / "func"
                 confound_patterns = [
@@ -182,10 +141,11 @@ def main(argv: list[str] | None = None) -> int:
 
             #For every confound file, try to run the dr2star pipeline.
             for confound_file in confound_files:
+                print(f"Run: {confound_file.name}")
 
                 #Populate the corresponding output censor file name.
                 confound_name = confound_file.name
-                censor_name = _replace_confounds_suffix(
+                censor_name = utilities._replace_confounds_suffix(
                     confound_name,
                     "_desc-dr2star_censor.1D",
                 )
@@ -200,7 +160,7 @@ def main(argv: list[str] | None = None) -> int:
                 )
 
                 space_token = args.space.replace(":", "_")
-                bold_name = _replace_confounds_suffix(
+                bold_name = utilities._replace_confounds_suffix(
                     confound_name,
                     f"_space-{space_token}_desc-preproc_bold.nii.gz",
                 )
@@ -211,7 +171,7 @@ def main(argv: list[str] | None = None) -> int:
                     )
 
                 if args.mask_input is None:
-                    mask_name = _replace_confounds_suffix(
+                    mask_name = utilities._replace_confounds_suffix(
                         confound_name,
                         f"_space-{space_token}_desc-brain_mask.nii.gz",
                     )
@@ -256,6 +216,14 @@ def main(argv: list[str] | None = None) -> int:
                 if log_json.exists():
                     sidecar_json = Path(str(output_path).replace(".nii.gz", ".json"))
                     log_json.replace(sidecar_json)
+                    utilities.postprocess_tat2_json(
+                        sidecar_json,
+                        input_dir,
+                        output_dir,
+                        confound_file,
+                        args.fd_thres,
+                        args.dvars_thresh,
+                    )
     return 0
 
 
