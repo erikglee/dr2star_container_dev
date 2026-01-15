@@ -1,4 +1,4 @@
-# see 'make .make/docker-tat2' and 'TAT2_TEST_DOCKER=1 bats t/tat2-fmriprep.bats'
+# see 'make .make/docker-dr2star' and 'DR2STAR_TEST_DOCKER=1 bats t/dr2star-fmriprep.bats'
 from debian:13-slim
 
 # ~10Mb of AFNI tools.  latest pulled 20260102, created 2025-12-18
@@ -20,9 +20,8 @@ run apt-get update -qq && \
   rm -rf /var/lib/apt/lists/* 
 
 
-copy tat2 /usr/bin/
-copy run.py /usr/bin/dr2star
+copy dr2star-core /usr/bin/
+copy dr2star /usr/bin/dr2star
 copy my_parser.py /usr/bin/
-run chmod +x /usr/bin/tat2 /usr/bin/dr2star
+run chmod +x /usr/bin/dr2star-core /usr/bin/dr2star
 entrypoint ["/usr/bin/dr2star"]
-
