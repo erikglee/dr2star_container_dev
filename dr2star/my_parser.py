@@ -84,6 +84,36 @@ def get_parser() -> argparse.ArgumentParser:
         ),
     )
     parser.add_argument(
+        "-t",
+        "--task-id",
+        dest="task_id",
+        metavar="TASK",
+        nargs="+",
+        help=(
+            "Optional task ID(s) to process. Provide one or more task IDs "
+            "separated by spaces (e.g., 'rest' 'nback')."
+        ),
+    )
+    parser.add_argument(
+        "--space",
+        dest="space",
+        metavar="SPACE",
+        default="MNI152NLin6Asym:res-2",
+        help=(
+            "Volumetric space specifier for fMRIPrep outputs. "
+            "Provide a single value (e.g., 'MNI152NLin6Asym:res-2')."
+        ),
+    )
+    parser.add_argument(
+        "--mask-input",
+        dest="mask_input",
+        metavar="PATH",
+        help=(
+            "Mask input: either a derivatives-like directory containing per-subject/session masks "
+            "or a single mask file in standard space to apply to all subjects."
+        ),
+    )
+    parser.add_argument(
         "--scale",
         dest="scale",
         metavar="SCALE",
@@ -148,7 +178,15 @@ def get_parser() -> argparse.ArgumentParser:
         dest="fd_thres",
         metavar="THRESH",
         type=float,
+        default=0.3,
         help="Framewise displacement threshold for fmriprep confounds (FD_THRES env).",
+    )
+    parser.add_argument(
+        "--dvars-thresh",
+        dest="dvars_thresh",
+        metavar="THRESH",
+        type=float,
+        help="DVARS threshold for confounds filtering (currently unused).",
     )
     parser.add_argument(
         "-w",
