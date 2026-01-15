@@ -1,8 +1,8 @@
 # see 'make .make/docker-dr2star' and 'DR2STAR_TEST_DOCKER=1 bats t/dr2star-fmriprep.bats'
-from debian:13-slim
+FROM debian:13-slim
 
 # ~10Mb of AFNI tools.  latest pulled 20260102, created 2025-12-18
-copy --from=docker.io/afni/afni_make_build@sha256:5e0d8733ed277ea58b4a527e88bc10f62572ee63308d97a5e5e340d4423b3804 \
+COPY --from=docker.io/afni/afni_make_build@sha256:5e0d8733ed277ea58b4a527e88bc10f62572ee63308d97a5e5e340d4423b3804 \
   /opt/afni/install/libmri.so \
   /opt/afni/install/libf2c.so \
   /opt/afni/install/3dBrickStat \
@@ -15,13 +15,13 @@ copy --from=docker.io/afni/afni_make_build@sha256:5e0d8733ed277ea58b4a527e88bc10
   /usr/bin/
 
 # depends read from 'ldd': libz libexpat
-run apt-get update -qq && \
+RUN apt-get update -qq && \
   apt-get install -qy parallel libexpat1 zlib1g python3 && \
   rm -rf /var/lib/apt/lists/* 
 
 
-copy dr2star-core /usr/bin/
-copy dr2star /usr/bin/dr2star
-copy my_parser.py /usr/bin/
-run chmod +x /usr/bin/dr2star-core /usr/bin/dr2star
-entrypoint ["/usr/bin/dr2star"]
+COPY dr2star-core /usr/bin/
+COPY dr2star /usr/bin/dr2star
+COPY my_parser.py /usr/bin/
+RUN chmod +x /usr/bin/dr2star-core /usr/bin/dr2star
+ENTRYPOINT ["/usr/bin/dr2star"]
