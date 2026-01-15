@@ -20,7 +20,7 @@ RUN apt-get update -qq && \
 
 
 COPY dr2star-core /usr/bin/
-COPY dr2star /usr/bin/dr2star
+COPY dr2star/run.py /usr/bin/dr2star
 COPY my_parser.py /usr/bin/
 RUN chmod +x /usr/bin/dr2star-core /usr/bin/dr2star
 ENTRYPOINT ["/usr/bin/dr2star"]
