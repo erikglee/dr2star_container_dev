@@ -8,7 +8,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-from my_parser import get_parser
+from .my_parser import get_parser
 
 
 def main(argv: list[str] | None = None) -> int:

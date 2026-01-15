@@ -15,12 +15,17 @@ COPY --from=docker.io/afni/afni_make_build@sha256:5e0d8733ed277ea58b4a527e88bc10
 
 # depends read from 'ldd': libz libexpat
 RUN apt-get update -qq && \
-  apt-get install -qy parallel libexpat1 zlib1g python3 && \
+  apt-get install -qy parallel libexpat1 zlib1g python3 python3-pip && \
+  python3 -m pip install --no-cache-dir \
+    numpy==1.26.4 \
+    pandas==2.2.3 \
+    nibabel==5.3.2 \
+    pybids==0.16.5 && \
   rm -rf /var/lib/apt/lists/* 
 
 
 COPY dr2star-core /usr/bin/
-COPY dr2star/run.py /usr/bin/dr2star
-COPY my_parser.py /usr/bin/
-RUN chmod +x /usr/bin/dr2star-core /usr/bin/dr2star
-ENTRYPOINT ["/usr/bin/dr2star"]
+COPY dr2star /opt/dr2star/dr2star
+ENV PYTHONPATH=/opt/dr2star
+RUN chmod +x /usr/bin/dr2star-core
+ENTRYPOINT ["python3", "-m", "dr2star.run"]
