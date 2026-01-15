@@ -9,7 +9,7 @@ import textwrap
 
 def get_parser() -> argparse.ArgumentParser:
     description = """
-    dr2star wrapper for tat2 fmriprep runs.
+    dr2star wrapper for dr2star-core fmriprep runs.
 
     This interface mirrors a BIDS App-style CLI with three positional
     arguments: input, output, and analysis level. Only the participant
@@ -20,19 +20,19 @@ def get_parser() -> argparse.ArgumentParser:
     Examples
     --------
     Process all participants and sessions:
-      run.py /data/derivatives/fmriprep /data/derivatives/dr2star participant
+      dr2star /data/derivatives/fmriprep /data/derivatives/dr2star participant
 
     Process a single participant:
-      run.py /data/derivatives/fmriprep /data/derivatives/dr2star participant \
+      dr2star /data/derivatives/fmriprep /data/derivatives/dr2star participant \
         --participant-label 01
 
     Process a single participant/session:
-      run.py /data/derivatives/fmriprep /data/derivatives/dr2star participant \
+      dr2star /data/derivatives/fmriprep /data/derivatives/dr2star participant \
         --participant-label 01 --ses-label 02
     """
 
     parser = argparse.ArgumentParser(
-        prog="run.py",
+        prog="dr2star",
         description=textwrap.dedent(description).strip(),
         epilog=textwrap.dedent(epilog).strip(),
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -43,7 +43,7 @@ def get_parser() -> argparse.ArgumentParser:
         metavar="INPUT_DIR",
         help=(
             "Path to fmriprep derivatives (input directory). "
-            "This is passed to tat2 using -fmriprep."
+            "This is passed to dr2star-core using -fmriprep."
         ),
     )
     parser.add_argument(
@@ -88,70 +88,70 @@ def get_parser() -> argparse.ArgumentParser:
         dest="scale",
         metavar="SCALE",
         type=float,
-        help="Scale factor passed to tat2 (-scale).",
+        help="Scale factor passed to dr2star-core (-scale).",
     )
     parser.add_argument(
         "--no-voxscale",
         dest="no_voxscale",
         action="store_true",
-        help="Disable voxel scaling (tat2 -no_voxscale).",
+        help="Disable voxel scaling (dr2star-core -no_voxscale).",
     )
     parser.add_argument(
         "--inverse",
         dest="inverse",
         action="store_true",
-        help="Use 1/T2* input (tat2 -inverse).",
+        help="Use 1/T2* input (dr2star-core -inverse).",
     )
     parser.add_argument(
         "--mean-time",
         dest="mean_time",
         action="store_true",
-        help="Use mean across time (tat2 -mean_time).",
+        help="Use mean across time (dr2star-core -mean_time).",
     )
     parser.add_argument(
         "--median-time",
         dest="median_time",
         action="store_true",
-        help="Use median across time (tat2 -median_time).",
+        help="Use median across time (dr2star-core -median_time).",
     )
     parser.add_argument(
         "--mean-vol",
         dest="mean_vol",
         action="store_true",
-        help="Use mean across volume (tat2 -mean_vol).",
+        help="Use mean across volume (dr2star-core -mean_vol).",
     )
     parser.add_argument(
         "--median-vol",
         dest="median_vol",
         action="store_true",
-        help="Use median across volume (tat2 -median_vol).",
+        help="Use median across volume (dr2star-core -median_vol).",
     )
     parser.add_argument(
         "--no-vol",
         dest="no_vol",
         action="store_true",
-        help="Disable volume normalization (tat2 -no_vol).",
+        help="Disable volume normalization (dr2star-core -no_vol).",
     )
     parser.add_argument(
         "--maxvols",
         dest="maxvols",
         metavar="N",
         type=int,
-        help="Limit each run to N volumes after censoring (tat2 -maxvols).",
+        help="Limit each run to N volumes after censoring (dr2star-core -maxvols).",
     )
     parser.add_argument(
         "--maxvolstotal",
         dest="maxvolstotal",
         metavar="N",
         type=int,
-        help="Limit total combined volumes to N (tat2 -maxvolstotal).",
+        help="Limit total combined volumes to N (dr2star-core -maxvolstotal).",
     )
     parser.add_argument(
         "--sample-method",
         dest="sample_method",
         metavar="METHOD",
         choices=["first", "last", "random"],
-        help="Sampling method when using maxvols options (tat2 -sample_method).",
+        help="Sampling method when using maxvols options (dr2star-core -sample_method).",
     )
     parser.add_argument(
         "--fd-thres",
@@ -164,19 +164,19 @@ def get_parser() -> argparse.ArgumentParser:
         "-w",
         dest="tmp_dir",
         metavar="DIR",
-        help="Working directory for intermediate files (tat2 -tmp).",
+        help="Working directory for intermediate files (dr2star-core -tmp).",
     )
     parser.add_argument(
         "--noclean",
         dest="noclean",
         action="store_true",
-        help="Keep temporary files (tat2 -noclean).",
+        help="Keep temporary files (dr2star-core -noclean).",
     )
     parser.add_argument(
         "--verbose",
         dest="verbose",
         action="store_true",
-        help="Enable verbose logging (tat2 -verbose).",
+        help="Enable verbose logging (dr2star-core -verbose).",
     )
 
     return parser
