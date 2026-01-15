@@ -15,8 +15,16 @@ COPY --from=docker.io/afni/afni_make_build@sha256:5e0d8733ed277ea58b4a527e88bc10
 
 # depends read from 'ldd': libz libexpat
 RUN apt-get update -qq && \
-  apt-get install -qy parallel libexpat1 zlib1g python3 python3-pip && \
-  python3 -m pip install --no-cache-dir \
+  apt-get install -qy --no-install-recommends \
+    parallel \
+    libexpat1 \
+    zlib1g \
+    python3 \
+    python3-venv \
+    ca-certificates && \
+  python3 -m venv /opt/venv && \
+  /opt/venv/bin/pip install --no-cache-dir --upgrade pip setuptools wheel && \
+  /opt/venv/bin/pip install --no-cache-dir \
     numpy==1.26.4 \
     pandas==2.2.3 \
     nibabel==5.3.2 \
@@ -26,6 +34,8 @@ RUN apt-get update -qq && \
 
 COPY dr2star-core /usr/bin/
 COPY dr2star /opt/dr2star/dr2star
+ENV VIRTUAL_ENV=/opt/venv
+ENV PATH="/opt/venv/bin:${PATH}"
 ENV PYTHONPATH=/opt/dr2star
 RUN chmod +x /usr/bin/dr2star-core
 ENTRYPOINT ["python3", "-m", "dr2star.run"]
