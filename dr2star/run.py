@@ -49,15 +49,16 @@ def main(argv: list[str] | None = None) -> int:
         cmd.append("-no_voxscale")
     if args.inverse:
         cmd.append("-inverse")
-    if args.mean_time:
+    if args.time_norm == "mean":
         cmd.append("-mean_time")
-    if args.median_time:
+    elif args.time_norm == "median":
         cmd.append("-median_time")
-    if args.mean_vol:
+
+    if args.volume_norm == "mean":
         cmd.append("-mean_vol")
-    if args.median_vol:
+    elif args.volume_norm == "median":
         cmd.append("-median_vol")
-    if args.no_vol:
+    elif args.volume_norm == "none":
         cmd.append("-no_vol")
     if args.maxvols is not None:
         cmd.extend(["-maxvols", str(args.maxvols)])

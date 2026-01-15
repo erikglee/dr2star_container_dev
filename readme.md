@@ -24,7 +24,7 @@ OUTPUT_DIR/sub-<label>/ses-<label>/anat/
 ```
 
 Each session produces:
- - `sub-*_ses-*_space-MNI152NLin6Asym_res-2_desc-dr2star_T2starw.nii.gz`
+ - `sub-*_ses-*_space-MNI152NLin6Asym_res-2_desc-dr2star_dr2starmap.nii.gz`
  - a JSON sidecar with the same basename
  - one or more censor files with matching basename
 

@@ -103,34 +103,24 @@ def get_parser() -> argparse.ArgumentParser:
         help="Use 1/T2* input (dr2star-core -inverse).",
     )
     parser.add_argument(
-        "--mean-time",
-        dest="mean_time",
-        action="store_true",
-        help="Use mean across time (dr2star-core -mean_time).",
+        "--time-norm",
+        dest="time_norm",
+        choices=["none", "mean", "median"],
+        default="none",
+        help=(
+            "Time normalization method (dr2star-core -mean_time/-median_time). "
+            "Use 'none' for default behavior."
+        ),
     )
     parser.add_argument(
-        "--median-time",
-        dest="median_time",
-        action="store_true",
-        help="Use median across time (dr2star-core -median_time).",
-    )
-    parser.add_argument(
-        "--mean-vol",
-        dest="mean_vol",
-        action="store_true",
-        help="Use mean across volume (dr2star-core -mean_vol).",
-    )
-    parser.add_argument(
-        "--median-vol",
-        dest="median_vol",
-        action="store_true",
-        help="Use median across volume (dr2star-core -median_vol).",
-    )
-    parser.add_argument(
-        "--no-vol",
-        dest="no_vol",
-        action="store_true",
-        help="Disable volume normalization (dr2star-core -no_vol).",
+        "--volume-norm",
+        dest="volume_norm",
+        choices=["none", "mean", "median"],
+        default="none",
+        help=(
+            "Volume normalization method (dr2star-core -mean_vol/-median_vol/-no_vol). "
+            "Use 'none' to disable volume normalization."
+        ),
     )
     parser.add_argument(
         "--maxvols",

@@ -663,7 +663,7 @@ _dr2star(){
       out_base="$(basename "$OUTPUT")"
       out_base="${out_base%.nii.gz}"
       out_base="${out_base%.nii}"
-      out_base="${out_base%_T2starw}"
+      out_base="${out_base%_dr2starmap}"
       for i in "${!censor_files[@]}"; do
          local run_idx
          run_idx=$(printf "%02d" $((i + 1)))
@@ -809,7 +809,7 @@ _dr2star_fmriprep(){
       local output_name
       output_name="sub-$sub_label"
       [ -n "$ses_label" ] && output_name="${output_name}_ses-$ses_label"
-      output_name="${output_name}_space-MNI152NLin6Asym_res-2_desc-dr2star_T2starw.nii.gz"
+      output_name="${output_name}_space-MNI152NLin6Asym_res-2_desc-dr2star_dr2starmap.nii.gz"
       local output_dir="$FMRIPREP_OUTPUT_ROOT/sub-$sub_label/ses-$ses_label/anat"
       mkdir -p "$output_dir"
       output_path="$output_dir/$output_name"
