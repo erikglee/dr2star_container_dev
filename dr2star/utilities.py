@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import json
+import os
 from pathlib import Path
 
 import pandas as pd
@@ -58,20 +59,37 @@ def ensure_dataset_description(output_dir: Path) -> Path:
     """Create a minimal BIDS derivatives dataset_description.json if missing."""
     output_dir.mkdir(parents=True, exist_ok=True)
     desc_path = output_dir / "dataset_description.json"
+    version = os.environ.get("DR2STAR_VERSION", "unknown")
     if desc_path.exists():
-        return desc_path
-    description = {
-        "Name": "dr2star derivatives",
-        "BIDSVersion": "1.8.0",
-        "DatasetType": "derivative",
-        "GeneratedBy": [
+        try:
+            existing = json.loads(desc_path.read_text())
+        except json.JSONDecodeError:
+            existing = {}
+    else:
+        existing = {}
+    description = dict(existing)
+    description.setdefault("Name", "dr2star derivatives")
+    description.setdefault("BIDSVersion", "1.8.0")
+    description.setdefault("DatasetType", "derivative")
+    generated_by = existing.get("GeneratedBy")
+    if not isinstance(generated_by, list):
+        generated_by = []
+    updated = False
+    for entry in generated_by:
+        if isinstance(entry, dict) and entry.get("Name") == "dr2star":
+            entry["Version"] = version
+            entry.setdefault("Description", "dr2star processing using tat2")
+            updated = True
+            break
+    if not updated:
+        generated_by.append(
             {
                 "Name": "dr2star",
-                "Version": "unknown",
+                "Version": version,
                 "Description": "dr2star processing using tat2",
             }
-        ],
-    }
+        )
+    description["GeneratedBy"] = generated_by
     desc_path.write_text(json.dumps(description, indent=2, sort_keys=True) + "\n")
     return desc_path
 

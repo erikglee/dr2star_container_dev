@@ -31,19 +31,22 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Resolve image tag
+      - name: Resolve image tag and version
         id: meta
         run: |
           image="${REGISTRY}/${IMAGE_NAME}"
           if [ "${GITHUB_EVENT_NAME}" = "release" ]; then
             tag="${{ github.event.release.tag_name }}"
-            tag="${tag#v}"
-            echo "tags=${image}:${tag}" >> "$GITHUB_OUTPUT"
+            version="${tag#v}"
+            echo "tags=${image}:${version}" >> "$GITHUB_OUTPUT"
           elif [ "${GITHUB_REF_NAME}" = "development" ]; then
+            version="development-$(git rev-parse --short HEAD)"
             echo "tags=${image}:development" >> "$GITHUB_OUTPUT"
           else
+            version="main-$(git rev-parse --short HEAD)"
             echo "tags=${image}:latest" >> "$GITHUB_OUTPUT"
           fi
+          echo "version=${version}" >> "$GITHUB_OUTPUT"
 
       - name: Build and push
         uses: docker/build-push-action@v6
@@ -52,3 +55,9 @@ jobs:
           file: ./Dockerfile
           push: true
           tags: ${{ steps.meta.outputs.tags }}
+          build-args: |
+            DR2STAR_VERSION=${{ steps.meta.outputs.version }}
+          labels: |
+            org.opencontainers.image.version=${{ steps.meta.outputs.version }}
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
