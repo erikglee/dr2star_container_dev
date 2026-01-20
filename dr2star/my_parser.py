@@ -101,7 +101,7 @@ def get_parser() -> argparse.ArgumentParser:
         default="MNI152NLin6Asym:res-2",
         help=(
             "Volumetric space specifier for fMRIPrep outputs. "
-            "Provide a single value (e.g., 'MNI152NLin6Asym:res-2')."
+            "Provide a single value (e.g., 'MNI152NLin6Asym:res-2', 'T1w')."
         ),
     )
     parser.add_argument(

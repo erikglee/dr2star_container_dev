@@ -82,10 +82,6 @@ def main(argv: list[str] | None = None) -> int:
         print("Sessions: all")
 
     env = os.environ.copy()
-    env.setdefault(
-        "FMRIPREP_TASK_PATTERN",
-        "*_task-*space-MNI152NLin6Asym_res-2*desc-preproc_bold.nii.gz",
-    )
     if args.fd_thres is not None:
         env["FD_THRES"] = str(args.fd_thres)
 
